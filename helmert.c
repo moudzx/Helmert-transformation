@@ -32,15 +32,15 @@ PositionVector geographic_to_geocentric(Datum datum){
 
 	PositionVector position;
 
-        double sin_lon = sin(datum.coordinate.lon);
-        double cos_lon = cos(datum.coordinate.lon);
+    double sin_lon = sin(datum.coordinate.lon);
+    double cos_lon = cos(datum.coordinate.lon);
 	double sin_lat = sin(datum.coordinate.lat);
-        double cos_lat = cos(datum.coordinate.lat);
+    double cos_lat = cos(datum.coordinate.lat);
 
 	double n = datum.ellipse.a / sqrt(1.0 - datum.ellipse.eSquared * sin_lat * sin_lat);
 
 	position.x = (n + datum.coordinate.h) * cos_lat * cos_lon;
-        position.y = (n + datum.coordinate.h) * cos_lat * sin_lon;
+    position.y = (n + datum.coordinate.h) * cos_lat * sin_lon;
 	position.z = (n * (1.0 - datum.ellipse.eSquared) + datum.coordinate.h) * sin_lat;
 
 	return position;
@@ -66,24 +66,24 @@ Coordinate geocentric_to_geographic(Datum datum){
 	Coordinate coordinate;
 
 	double x = datum.position.x;
-        double y = datum.position.y;
-        double z = datum.position.z;
+    double y = datum.position.y;
+    double z = datum.position.z;
 
 	double n;
 	double r = sqrt(x * x + y * y);
 	double tempLat = atan2(z, r * (1.0 - datum.ellipse.f));
 
-    	while(1) {
+    while(1) {
 		n = datum.ellipse.a / sqrt(1.0 - datum.ellipse.eSquared * sin(tempLat) * sin(tempLat));
-        	coordinate.lat = atan2(z + datum.ellipse.eSquared * n * sin(tempLat), r);
-        	if (fabs(coordinate.lat - tempLat) < 1e-12) break;
-        	tempLat = coordinate.lat;
+		coordinate.lat = atan2(z + datum.ellipse.eSquared * n * sin(tempLat), r);
+    	if (fabs(coordinate.lat - tempLat) < 1e-12) break;
+    	tempLat = coordinate.lat;
 	}
 
-    	n = datum.ellipse.a / sqrt(1.0 - datum.ellipse.eSquared * sin(coordinate.lat) * sin(coordinate.lat));
+    n = datum.ellipse.a / sqrt(1.0 - datum.ellipse.eSquared * sin(coordinate.lat) * sin(coordinate.lat));
 
-    	coordinate.lon = atan2(y, x);
-    	coordinate.h = r / cos(coordinate.lat) - n;
+    coordinate.lon = atan2(y, x);
+    coordinate.h = r / cos(coordinate.lat) - n;
 
 	return coordinate;
 }
@@ -115,7 +115,7 @@ int main(){
 	Ellipsoid sourceEllipse;
 	printf("- Select source ellipsoid:\n");
 	printf("1) WGS 80 \n2) Clarke 1880 IGN \n3) GRS 80 \n
-		4) NAD 83 \n5) GDA 94 \n 6) Custom");
+			4) NAD 83 \n5) GDA 94 \n 6) Custom");
 	
 	unsigned int choice;
 	switch(choice){
@@ -135,8 +135,9 @@ int main(){
 
 
 	Ellipsoid targetEllipse;
+	printf("- Select target ellipsoid:\n");
 	printf("1) WGS 80 \n2) Clarke 1880 IGN \n3) GRS 80 \n
-		4) NAD 83 \n5) GDA 94 \n 6) Custom");
+			4) NAD 83 \n5) GDA 94 \n 6) Custom");
 	
 	switch(choice){
 		case 1: targetEllipse = WGS84; break;
@@ -154,14 +155,14 @@ int main(){
 	}
 
 
-    	Helmert helmert;
-    	printf("\n- Enter Helmet parameters\n");
-    	printf("\nTx Ty Tz (m)   : ");
-    	scanf("%lf %lf %lf", &helmert.Tx, &helmert.Ty, &helmert.Tz);
-    	printf("Rx Ry Rz (arcsec): ");
-    	scanf("%lf %lf %lf", &helmert.Rx, &helmert.Ry, &helmert.Rz);
-    	printf("Scale    (ppm)   : ");
-    	scanf("%lf", &helmert.s);
+    Helmert helmert;
+    printf("\n- Enter Helmet parameters\n");
+    printf("\nTx Ty Tz (m)   : ");
+    scanf("%lf %lf %lf", &helmert.Tx, &helmert.Ty, &helmert.Tz);
+    printf("Rx Ry Rz (arcsec): ");
+    scanf("%lf %lf %lf", &helmert.Rx, &helmert.Ry, &helmert.Rz);
+    printf("Scale    (ppm)   : ");
+    scanf("%lf", &helmert.s);
 
 	Coordinate sourceCoord;
 	printf("\n- Enter your coordinates:\n");
@@ -189,9 +190,9 @@ int main(){
 
 	// radian to degree
 	datum1.coordinate.lat *= (180.0 / PI);
-    	datum1.coordinate.lon *= (180.0 / PI);
-    	datum2.coordinate.lat *= (180.0 / PI);
-    	datum2.coordinate.lon *= (180.0 / PI);
+    datum1.coordinate.lon *= (180.0 / PI);
+    datum2.coordinate.lat *= (180.0 / PI);
+    datum2.coordinate.lon *= (180.0 / PI);
 
 	printf("\n- Results:\n");
 
