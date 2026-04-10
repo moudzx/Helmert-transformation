@@ -113,11 +113,11 @@ int main(){
 	printf("Geographic Coordinate Transformation using Helmet 7-parameter\n\n");
 
 	Ellipsoid sourceEllipse;
-	printf("- Select source ellipsoid:\n");
-	printf("1) WGS 80 \n2) Clarke 1880 IGN \n3) GRS 80 \n
-			4) NAD 83 \n5) GDA 94 \n 6) Custom");
+	printf("1) WGS 80 \n2) Clarke 1880 IGN \n3) GRS 80 \n4) NAD 83 \n5) GDA 94 \n6) Custom \n");
+	printf("- Select source ellipsoid: \n");
+	int choice;
+	scanf("%d",&choice);
 	
-	unsigned int choice;
 	switch(choice){
 		case 1: sourceEllipse = WGS84; break;
 		case 2: sourceEllipse = Clarke1880; break;
@@ -135,9 +135,8 @@ int main(){
 
 
 	Ellipsoid targetEllipse;
-	printf("- Select target ellipsoid:\n");
-	printf("1) WGS 80 \n2) Clarke 1880 IGN \n3) GRS 80 \n
-			4) NAD 83 \n5) GDA 94 \n 6) Custom");
+	printf("- Select target ellipsoid: \n");
+	scanf("%d",&choice);
 	
 	switch(choice){
 		case 1: targetEllipse = WGS84; break;
