@@ -5,6 +5,7 @@ import helmert.Geodesy.*;
 import javax.swing.*;
 import javax.swing.border.*;
 import java.awt.*;
+import java.math.BigDecimal;
 
 public class HelmertApp extends JFrame {
 
@@ -277,30 +278,30 @@ public class HelmertApp extends JFrame {
 
     private void runTransform() {
         try {
-            double lat = Double.parseDouble(fLat.getText().trim());
-            double lon = Double.parseDouble(fLon.getText().trim());
-            double h   = Double.parseDouble(fH.getText().trim());
+            BigDecimal lat = new BigDecimal(fLat.getText().trim());
+            BigDecimal lon = new BigDecimal(fLon.getText().trim());
+            BigDecimal h   = new BigDecimal(fH.getText().trim());
 
             HelmertParams params = new HelmertParams();
-            params.Tx = Double.parseDouble(fTx.getText().trim());
-            params.Ty = Double.parseDouble(fTy.getText().trim());
-            params.Tz = Double.parseDouble(fTz.getText().trim());
-            params.Rx = Double.parseDouble(fRx.getText().trim());
-            params.Ry = Double.parseDouble(fRy.getText().trim());
-            params.Rz = Double.parseDouble(fRz.getText().trim());
-            params.s  = Double.parseDouble(fS.getText().trim());
+            params.Tx = new BigDecimal(fTx.getText().trim());
+            params.Ty = new BigDecimal(fTy.getText().trim());
+            params.Tz = new BigDecimal(fTz.getText().trim());
+            params.Rx = new BigDecimal(fRx.getText().trim());
+            params.Ry = new BigDecimal(fRy.getText().trim());
+            params.Rz = new BigDecimal(fRz.getText().trim());
+            params.s  = new BigDecimal(fS.getText().trim());
 
             Ellipsoid srcE = (Ellipsoid) cbSrc.getSelectedItem();
             Ellipsoid dstE = (Ellipsoid) cbDst.getSelectedItem();
 
             if (cbSrc.getSelectedIndex() == 5) {
-                srcE = new Ellipsoid("Custom", Double.parseDouble(fSrcA.getText().trim()), Double.parseDouble(fSrcF.getText().trim()));
+                srcE = new Ellipsoid("Custom", new BigDecimal(fSrcA.getText().trim()), new BigDecimal(fSrcF.getText().trim()));
             }
             if (cbDst.getSelectedIndex() == 5) {
-                dstE = new Ellipsoid("Custom", Double.parseDouble(fDstA.getText().trim()), Double.parseDouble(fDstF.getText().trim()));
+                dstE = new Ellipsoid("Custom", new BigDecimal(fDstA.getText().trim()), new BigDecimal(fDstF.getText().trim()));
             }
 
-            LLH srcLLH = new LLH(Math.toRadians(lat), Math.toRadians(lon), h);
+            LLH srcLLH = new LLH(Geodesy.toRadians(lat), Geodesy.toRadians(lon), h);
             Result result = Geodesy.transform(srcLLH, srcE, dstE, params);
 
             showResults(result);
@@ -324,44 +325,44 @@ public class HelmertApp extends JFrame {
         content.setLayout(new BoxLayout(content, BoxLayout.Y_AXIS));
         content.setBackground(C_BG);
 
-        double srcLat = Math.toDegrees(r.srcLLH.lat);
-        double srcLon = Math.toDegrees(r.srcLLH.lon);
-        double dstLat = Math.toDegrees(r.dstLLH.lat);
-        double dstLon = Math.toDegrees(r.dstLLH.lon);
-        double dLat = (dstLat - srcLat) * 3600.0;
-        double dLon = (dstLon - srcLon) * 3600.0;
-        double dH   = r.dstLLH.h - r.srcLLH.h;
+        BigDecimal srcLat = Geodesy.toDegrees(r.srcLLH.lat);
+        BigDecimal srcLon = Geodesy.toDegrees(r.srcLLH.lon);
+        BigDecimal dstLat = Geodesy.toDegrees(r.dstLLH.lat);
+        BigDecimal dstLon = Geodesy.toDegrees(r.dstLLH.lon);
+        BigDecimal dLat = dstLat.subtract(srcLat, Geodesy.MC).multiply(new BigDecimal("3600"), Geodesy.MC);
+        BigDecimal dLon = dstLon.subtract(srcLon, Geodesy.MC).multiply(new BigDecimal("3600"), Geodesy.MC);
+        BigDecimal dH   = r.dstLLH.h.subtract(r.srcLLH.h, Geodesy.MC);
 
         content.add(buildResultSection("SOURCE GRID PARAMETERS", new String[][]{
             {"Geographic Notation", null},
-            {"Latitude",   String.format("%.8f°", srcLat)},
-            {"Longitude",  String.format("%.8f°", srcLon)},
-            {"Height (h)", String.format("%.4f m",   r.srcLLH.h)},
+            {"Latitude",   fmtDeg(srcLat)},
+            {"Longitude",  fmtDeg(srcLon)},
+            {"Height (h)", fmtM(r.srcLLH.h)},
             {"Geocentric Cartesian Coordinates (ECEF)", null},
-            {"X",     String.format("%.4f m",   r.srcXYZ.x)},
-            {"Y",     String.format("%.4f m",   r.srcXYZ.y)},
-            {"Z",     String.format("%.4f m",   r.srcXYZ.z)},
+            {"X",     fmtM(r.srcXYZ.x)},
+            {"Y",     fmtM(r.srcXYZ.y)},
+            {"Z",     fmtM(r.srcXYZ.z)},
         }));
 
         content.add(Box.createVerticalStrut(16));
 
         content.add(buildResultSection("TARGET GRID TRANSLATION", new String[][]{
             {"Geographic Notation", null},
-            {"Latitude",   String.format("%.8f°", dstLat)},
-            {"Longitude",  String.format("%.8f°", dstLon)},
-            {"Height (h)", String.format("%.4f m",   r.dstLLH.h)},
+            {"Latitude",   fmtDeg(dstLat)},
+            {"Longitude",  fmtDeg(dstLon)},
+            {"Height (h)", fmtM(r.dstLLH.h)},
             {"Geocentric Cartesian Coordinates (ECEF)", null},
-            {"X",     String.format("%.4f m",   r.dstXYZ.x)},
-            {"Y",     String.format("%.4f m",   r.dstXYZ.y)},
-            {"Z",     String.format("%.4f m",   r.dstXYZ.z)},
+            {"X",     fmtM(r.dstXYZ.x)},
+            {"Y",     fmtM(r.dstXYZ.y)},
+            {"Z",     fmtM(r.dstXYZ.z)},
         }));
 
         content.add(Box.createVerticalStrut(16));
 
         content.add(buildResultSection("DELTA TRANSLATION RESIDUALS", new String[][]{
-            {"Latitude Offset",  String.format("%+.4f arcsec", dLat)},
-            {"Longitude Offset", String.format("%+.4f arcsec", dLon)},
-            {"Height Offset",    String.format("%+.4f m",      dH)},
+            {"Latitude Offset",  fmtSignedArcsec(dLat)},
+            {"Longitude Offset", fmtSignedArcsec(dLon)},
+            {"Height Offset",    fmtSignedM(dH)},
         }));
 
         JScrollPane scroll = new JScrollPane(content);
@@ -373,6 +374,26 @@ public class HelmertApp extends JFrame {
         resultsPanel.add(scroll, BorderLayout.CENTER);
         resultsPanel.revalidate();
         resultsPanel.repaint();
+    }
+
+    private static String fmtDeg(BigDecimal v) {
+        return v.setScale(8, java.math.RoundingMode.HALF_UP).toPlainString() + "°";
+    }
+
+    private static String fmtM(BigDecimal v) {
+        return v.setScale(4, java.math.RoundingMode.HALF_UP).toPlainString() + " m";
+    }
+
+    private static String fmtSignedArcsec(BigDecimal v) {
+        BigDecimal r = v.setScale(4, java.math.RoundingMode.HALF_UP);
+        String sign = r.signum() >= 0 ? "+" : "";
+        return sign + r.toPlainString() + " arcsec";
+    }
+
+    private static String fmtSignedM(BigDecimal v) {
+        BigDecimal r = v.setScale(4, java.math.RoundingMode.HALF_UP);
+        String sign = r.signum() >= 0 ? "+" : "";
+        return sign + r.toPlainString() + " m";
     }
 
     private JPanel buildResultSection(String title, String[][] rows) {
