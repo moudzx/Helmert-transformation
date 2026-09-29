@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Helmert Datum Shift Simulator</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Saira+Stencil+One&family=Share+Tech+Mono&display=swap">
+<style>
+:root {
+  box-sizing: border-box;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  --paper: #d8cca6; --paper2: #e5dcbc; --field: #f0e9d0; --ink: #2a2c1a;
+  --od: #4d5a2a; --od-d: #384220; --tan: #b7a674; --brown: #7a5a32; --rust: #9a4628;
+  --line: #8d8255; --dim: #6a643f;
+  --stencil: "Saira Stencil One", Impact, "Arial Narrow Bold", sans-serif;
+  --mono: "Share Tech Mono", ui-monospace, "Courier New", monospace;
+  color-scheme: light;
+}
+html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+* { box-sizing: border-box; }
+body {
+  margin: 0; color: var(--ink); font-family: var(--mono); font-size: 14px; line-height: 1.45;
+  background-color: var(--paper);
+  background-image:
+    linear-gradient(rgba(70, 62, 30, .09) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(70, 62, 30, .09) 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+header { padding: 16px 20px 2px; }
+h1 { margin: 0; padding-right: 44px; font: 400 28px/1.1 var(--stencil); color: var(--od-d); letter-spacing: .02em; }
+header p { margin: 6px 0 0; max-width: 78ch; color: var(--dim); }
+main { display: grid; grid-template-columns: 350px minmax(0, 1fr); gap: 14px; padding: 12px 20px 26px; max-width: 1400px; margin: 0 auto; }
+@media (max-width: 880px) { main { grid-template-columns: 1fr; padding: 12px; } }
+.col { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.panel {
+  position: relative; background: var(--paper2); border: 2px solid var(--od-d);
+  padding: 16px 14px 14px; min-width: 0;
+  box-shadow: inset 0 0 0 3px var(--paper2), inset 0 0 0 4px var(--line);
+}
+.panel::before, .panel::after {
+  content: ""; position: absolute; top: 6px; width: 6px; height: 6px; border-radius: 50%;
+  background: var(--tan); border: 1px solid var(--od-d);
+}
+.panel::before { left: 6px; } .panel::after { right: 6px; }
+h2 { margin: 0 0 10px; font: 400 16px/1.2 var(--stencil); color: var(--od-d); letter-spacing: .03em; }
+.grp { margin-bottom: 14px; }
+.grp:last-child { margin-bottom: 0; }
+.row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+button {
+  font: 400 13px var(--mono); color: var(--paper2); background: var(--od); border: 2px solid var(--od-d);
+  border-radius: 2px; padding: 5px 10px; cursor: pointer; min-height: 30px;
+  box-shadow: 0 2px 0 var(--od-d);
+}
+button:hover { background: #5b6a32; }
+button:active { transform: translateY(2px); box-shadow: none; }
+button.off { color: var(--od-d); background: var(--field); border-color: var(--line); box-shadow: 0 2px 0 var(--line); }
+button.off:hover { background: #f8f2dc; }
+button.big { min-height: 36px; padding: 6px 14px; font-family: var(--stencil); font-size: 14px; letter-spacing: .03em; }
+button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px solid var(--rust); outline-offset: 1px; }
+input[type="number"], input[type="text"], select {
+  font: 400 13px var(--mono); color: var(--ink); background: var(--field);
+  border: 2px solid var(--line); border-radius: 2px; padding: 4px 6px; width: 100%; min-width: 0;
+}
+input[type="range"] { width: 100%; accent-color: var(--od); margin: 0; }
+label.cap { display: block; font-size: 12px; color: var(--dim); margin-bottom: 4px; }
+.prm { display: grid; grid-template-columns: 34px minmax(0, 1fr) 92px 32px; gap: 6px; align-items: center; margin-bottom: 6px; }
+.prm b { font-weight: 400; color: var(--od-d); }
+.prm span { color: var(--dim); font-size: 12px; }
+.pt { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; margin-top: 8px; }
+.tabs { display: flex; gap: 6px; margin-bottom: 10px; flex-wrap: wrap; align-items: center; }
+.tabs .sp { flex: 1; }
+canvas { display: block; width: 100%; background: var(--field); border: 2px solid var(--line); }
+.legend { display: grid; gap: 4px; margin-top: 10px; }
+.lg { display: grid; grid-template-columns: 14px 118px minmax(0, 1fr); gap: 8px; align-items: center; font-size: 12.5px; }
+.lg i { width: 14px; height: 10px; display: block; }
+.lg em { font-style: normal; color: var(--dim); }
+.note { margin: 10px 0 0; color: var(--dim); font-size: 12px; }
+.step { border-left: 4px solid var(--od); padding: 2px 0 2px 10px; margin-bottom: 12px; }
+.step h3 { margin: 0 0 4px; font: 400 14px var(--stencil); color: var(--od-d); letter-spacing: .03em; }
+.step:last-child { margin-bottom: 0; }
+table { border-collapse: collapse; }
+td { padding: 1px 12px 1px 0; white-space: nowrap; font-variant-numeric: tabular-nums; }
+td.l { color: var(--dim); }
+.mat { display: inline-block; border-left: 2px solid var(--ink); border-right: 2px solid var(--ink); padding: 0 8px; margin: 4px 0; }
+.wrap { overflow-x: auto; }
+.two { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+@media (max-width: 1100px) { .two { grid-template-columns: 1fr; } }
+.out { color: var(--rust); }
+</style>
+</head>
+<body>
+<header>
+  <h1>Helmert datum shift</h1>
+  <p>Move one point from one geodetic datum to another with the 7-parameter similarity transform: three shifts, three small rotations and a scale change. Adjust the parameters and watch where the point lands.</p>
+</header>
+<main>
+  <div class="col">
+    <section class="panel" aria-label="Parameters">
+      <div class="grp">
+        <h2>Datum pair</h2>
+        <div class="row" id="presets"></div>
+        <div class="pt" style="grid-template-columns:1fr 1fr">
+          <div><label class="cap" for="src">From ellipsoid</label><select id="src"></select></div>
+          <div><label class="cap" for="dst">To ellipsoid</label><select id="dst"></select></div>
+        </div>
+      </div>
+      <div class="grp">
+        <h2>Parameters</h2>
+        <div class="row" id="conv" style="margin-bottom:10px"></div>
+        <div id="prms"></div>
+      </div>
+      <div class="grp">
+        <h2>Point to transform</h2>
+        <div class="row" id="cities"></div>
+        <div class="pt">
+          <div><label class="cap" for="lat">Lat (deg)</label><input id="lat" type="number" step="any"></div>
+          <div><label class="cap" for="lon">Lon (deg)</label><input id="lon" type="number" step="any"></div>
+          <div><label class="cap" for="hgt">Height (m)</label><input id="hgt" type="number" step="any"></div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <div class="col">
+    <section class="panel" aria-label="Plot">
+      <div class="tabs">
+        <button id="tLocal">Local shift</button>
+        <button id="tField" class="off">Region field</button>
+        <span class="sp"></span>
+        <button id="anim" class="big">Replay</button>
+      </div>
+      <canvas id="cv" role="img" aria-label="Plot of the point shift in metres"></canvas>
+      <div id="fieldCtl" class="row" style="margin-top:10px" hidden>
+        <label class="cap" for="span" style="margin:0">Region width</label>
+        <input id="span" type="range" min="1" max="30" step="1" value="10" style="width:200px">
+        <span id="spanV"></span>
+      </div>
+      <div class="legend" id="legend"></div>
+      <p class="note" id="plotNote"></p>
+    </section>
+
+    <section class="panel" aria-label="Calculation">
+      <h2>Calculation</h2>
+      <div class="two">
+        <div>
+          <div class="step"><h3>1. Geodetic to ECEF</h3><div class="wrap" id="s1"></div></div>
+          <div class="step"><h3>2. Apply Helmert</h3><div class="wrap" id="s2"></div></div>
+        </div>
+        <div>
+          <div class="step"><h3>3. ECEF to geodetic</h3><div class="wrap" id="s3"></div></div>
+          <div class="step"><h3>Net shift</h3><div class="wrap" id="s4"></div></div>
+        </div>
+      </div>
+    </section>
+  </div>
+</main>
+
+<script>
+(function () {
+  var D2R = Math.PI / 180, AS2R = Math.PI / 648000;
+  var ELL = {
+    "WGS84": { a: 6378137, f: 1 / 298.257223563 },
+    "Airy 1830": { a: 6377563.396, f: 1 / 299.3249646 },
+    "International 1924": { a: 6378388, f: 1 / 297 }
+  };
+  var PRM = [
+    { k: "tx", u: "m", min: -1000, max: 1000, st: 0.001 }, { k: "ty", u: "m", min: -1000, max: 1000, st: 0.001 },
+    { k: "tz", u: "m", min: -1000, max: 1000, st: 0.001 }, { k: "rx", u: "\u2033", min: -30, max: 30, st: 0.0001 },
+    { k: "ry", u: "\u2033", min: -30, max: 30, st: 0.0001 }, { k: "rz", u: "\u2033", min: -30, max: 30, st: 0.0001 },
+    { k: "s", u: "ppm", min: -60, max: 60, st: 0.0001 }
+  ];
+  var PRESETS = [
+    { n: "WGS84 \u2192 OSGB36", p: { tx: -446.448, ty: 125.157, tz: -542.06, rx: -0.1502, ry: -0.247, rz: -0.8421, s: 20.4894 }, conv: "pv", src: "WGS84", dst: "Airy 1830" },
+    { n: "Exaggerated demo", p: { tx: 150, ty: -100, tz: 80, rx: 8, ry: -6, rz: 12, s: 15 }, conv: "pv", src: "WGS84", dst: "WGS84" },
+    { n: "Zero", p: { tx: 0, ty: 0, tz: 0, rx: 0, ry: 0, rz: 0, s: 0 }, conv: "pv", src: "WGS84", dst: "WGS84" }
+  ];
+  var CITIES = [
+    { n: "Norfolk, UK", lat: 52.658008, lon: 1.716074, h: 108.05 }, { n: "London", lat: 51.5007, lon: -0.1246, h: 20 },
+    { n: "Paris", lat: 48.8584, lon: 2.2945, h: 35 }, { n: "Beirut", lat: 33.8938, lon: 35.5018, h: 30 },
+    { n: "Cairo", lat: 30.0444, lon: 31.2357, h: 25 }
+  ];
+  var COL = { t: "#4d5a2a", s: "#b58a2a", r: "#9a4628" };
+
+  var S = { p: {}, conv: "pv", src: "WGS84", dst: "Airy 1830", lat: 52.658008, lon: 1.716074, h: 108.05, view: "local", span: 10, prog: 3, playing: false };
+  var $ = function (id) { return document.getElementById(id); };
+
+  /* ---------- geodesy ---------- */
+  function toECEF(latD, lonD, h, E) {
+    var lat = latD * D2R, lon = lonD * D2R, e2 = E.f * (2 - E.f), sl = Math.sin(lat);
+    var N = E.a / Math.sqrt(1 - e2 * sl * sl);
+    return [(N + h) * Math.cos(lat) * Math.cos(lon), (N + h) * Math.cos(lat) * Math.sin(lon), (N * (1 - e2) + h) * sl];
+  }
+  function toGeo(X, E) {
+    var e2 = E.f * (2 - E.f), lon = Math.atan2(X[1], X[0]), p = Math.hypot(X[0], X[1]);
+    var lat = Math.atan2(X[2], p * (1 - e2)), h = 0, N;
+    for (var i = 0; i < 12; i++) {
+      var sl = Math.sin(lat); N = E.a / Math.sqrt(1 - e2 * sl * sl);
+      h = Math.abs(Math.cos(lat)) > 1e-9 ? p / Math.cos(lat) - N : Math.abs(X[2]) / Math.abs(sl) - N * (1 - e2);
+      lat = Math.atan2(X[2], p * (1 - e2 * N / (N + h)));
+    }
+    return { lat: lat / D2R, lon: lon / D2R, h: h };
+  }
+  function enuRows(latD, lonD) {
+    var la = latD * D2R, lo = lonD * D2R, sl = Math.sin(la), cl = Math.cos(la), so = Math.sin(lo), co = Math.cos(lo);
+    return [[-so, co, 0], [-sl * co, -sl * so, cl], [cl * co, cl * so, sl]];
+  }
+  function toENU(v, latD, lonD) {
+    var m = enuRows(latD, lonD);
+    return m.map(function (r) { return r[0] * v[0] + r[1] * v[1] + r[2] * v[2]; });
+  }
+  function rotMatrix() {
+    var rx = S.p.rx * AS2R, ry = S.p.ry * AS2R, rz = S.p.rz * AS2R;
+    var pv = [[1, -rz, ry], [rz, 1, -rx], [-ry, rx, 1]];
+    return S.conv === "pv" ? pv : [[1, rz, -ry], [-rz, 1, rx], [ry, -rx, 1]];
+  }
+  function helmert(X) {
+    var Rm = rotMatrix(), s = S.p.s * 1e-6, T = [S.p.tx, S.p.ty, S.p.tz];
+    var RX = Rm.map(function (r) { return r[0] * X[0] + r[1] * X[1] + r[2] * X[2]; });
+    var Xp = [0, 1, 2].map(function (i) { return T[i] + (1 + s) * RX[i]; });
+    var dS = X.map(function (v) { return s * v; });
+    var dR = [0, 1, 2].map(function (i) { return Xp[i] - X[i] - T[i] - dS[i]; });
+    return { Xp: Xp, dT: T, dS: dS, dR: dR, Rm: Rm };
+  }
+  function calc(lat, lon, h) {
+    var X = toECEF(lat, lon, h, ELL[S.src]), H = helmert(X), g = toGeo(H.Xp, ELL[S.dst]);
+    return { X: X, H: H, g: g, dT: toENU(H.dT, lat, lon), dS: toENU(H.dS, lat, lon), dR: toENU(H.dR, lat, lon), dX: [H.Xp[0] - X[0], H.Xp[1] - X[1], H.Xp[2] - X[2]] };
+  }
+
+  /* ---------- formatting ---------- */
+  function fx(x, d) { return (x < 0 ? "-" : "") + Math.abs(x).toFixed(d); }
+  function sg(x, d) { return (x < 0 ? "-" : "+") + Math.abs(x).toFixed(d); }
+  function dms(deg, isLat) {
+    var a = Math.abs(deg), d = Math.floor(a), m = Math.floor((a - d) * 60), s = ((a - d) * 60 - m) * 60;
+    if (s >= 59.99995) { s = 0; m++; } if (m >= 60) { m = 0; d++; }
+    return d + "\u00b0" + (m < 10 ? "0" : "") + m + "\u2032" + (s < 10 ? "0" : "") + s.toFixed(4) + "\u2033" + (isLat ? (deg < 0 ? "S" : "N") : (deg < 0 ? "W" : "E"));
+  }
+  function nice(v) {
+    var e = Math.pow(10, Math.floor(Math.log10(v))), f = v / e;
+    return (f <= 1 ? 1 : f <= 2 ? 2 : f <= 5 ? 5 : 10) * e;
+  }
+  function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
+
+  /* ---------- controls ---------- */
+  function buildControls() {
+    var pb = $("presets"); pb.innerHTML = "";
+    PRESETS.forEach(function (pr) {
+      var b = document.createElement("button"); b.textContent = pr.n; b.className = "off";
+      b.onclick = function () { S.p = JSON.parse(JSON.stringify(pr.p)); S.conv = pr.conv; S.src = pr.src; S.dst = pr.dst; syncInputs(); update(true); };
+      pb.appendChild(b);
+    });
+    ["src", "dst"].forEach(function (id) {
+      var sel = $(id); sel.innerHTML = "";
+      Object.keys(ELL).forEach(function (k) { var o = document.createElement("option"); o.value = k; o.textContent = k; sel.appendChild(o); });
+      sel.onchange = function () { S[id] = sel.value; update(false); };
+    });
+    var cb = $("conv"); cb.innerHTML = "";
+    [["pv", "Position vector"], ["cf", "Coordinate frame"]].forEach(function (c) {
+      var b = document.createElement("button"); b.textContent = c[1]; b.dataset.c = c[0];
+      b.onclick = function () { S.conv = c[0]; syncInputs(); update(false); }; cb.appendChild(b);
+    });
+    var pw = $("prms"); pw.innerHTML = "";
+    PRM.forEach(function (m) {
+      var row = document.createElement("div"); row.className = "prm";
+      row.innerHTML = "<b>" + m.k + "</b>";
+      var rg = document.createElement("input"); rg.type = "range"; rg.min = m.min; rg.max = m.max; rg.step = m.st; rg.id = "r_" + m.k; rg.setAttribute("aria-label", m.k + " slider");
+      var nm = document.createElement("input"); nm.type = "number"; nm.step = "any"; nm.id = "n_" + m.k; nm.setAttribute("aria-label", m.k + " value");
+      var u = document.createElement("span"); u.textContent = m.u;
+      rg.oninput = function () { S.p[m.k] = parseFloat(rg.value); nm.value = S.p[m.k]; update(false); };
+      nm.oninput = function () { var v = parseFloat(nm.value); S.p[m.k] = isNaN(v) ? 0 : v; rg.value = S.p[m.k]; update(false); };
+      row.appendChild(rg); row.appendChild(nm); row.appendChild(u); pw.appendChild(row);
+    });
+    var cw = $("cities"); cw.innerHTML = "";
+    CITIES.forEach(function (c) {
+      var b = document.createElement("button"); b.textContent = c.n; b.className = "off";
+      b.onclick = function () { S.lat = c.lat; S.lon = c.lon; S.h = c.h; syncInputs(); update(true); }; cw.appendChild(b);
+    });
+    [["lat", "lat"], ["lon", "lon"], ["hgt", "h"]].forEach(function (f) {
+      $(f[0]).oninput = function () { var v = parseFloat($(f[0]).value); if (!isNaN(v)) { S[f[1]] = v; if (f[1] === "lat") S.lat = Math.max(-89.9, Math.min(89.9, v)); update(false); } };
+    });
+    $("tLocal").onclick = function () { S.view = "local"; update(false); };
+    $("tField").onclick = function () { S.view = "field"; update(false); };
+    $("span").oninput = function () { S.span = parseFloat($("span").value); update(false); };
+    $("anim").onclick = function () { S.prog = 0; S.playing = true; };
+  }
+  function syncInputs() {
+    PRM.forEach(function (m) { $("r_" + m.k).value = S.p[m.k]; $("n_" + m.k).value = S.p[m.k]; });
+    Array.prototype.forEach.call($("conv").children, function (b) { b.className = b.dataset.c === S.conv ? "" : "off"; });
+    $("src").value = S.src; $("dst").value = S.dst;
+    $("lat").value = S.lat; $("lon").value = S.lon; $("hgt").value = S.h;
+  }
+
+  /* ---------- panels ---------- */
+  function drawText(c) {
+    var g = c.g, H = c.H;
+    $("s1").innerHTML = '<table><tr><td class="l">source</td><td>' + esc(S.src) + "</td></tr>" +
+      '<tr><td class="l">lat</td><td>' + fx(S.lat, 6) + "\u00b0</td></tr><tr><td class=\"l\">lon</td><td>" + fx(S.lon, 6) + "\u00b0</td></tr><tr><td class=\"l\">h</td><td>" + fx(S.h, 3) + " m</td></tr>" +
+      '<tr><td class="l">X</td><td>' + fx(c.X[0], 3) + " m</td></tr><tr><td class=\"l\">Y</td><td>" + fx(c.X[1], 3) + " m</td></tr><tr><td class=\"l\">Z</td><td>" + fx(c.X[2], 3) + " m</td></tr></table>";
+    var R = H.Rm, cell = function (v, i, j) { return i === j ? "1" : v.toExponential(3).replace("e-", "e\u2212").replace("e+", "e+"); };
+    var mat = '<div class="mat"><table>' + R.map(function (row, i) { return "<tr>" + row.map(function (v, j) { return "<td>" + (i === j ? "1" : (v < 0 ? "" : "+") + cell(v, i, j)) + "</td>"; }).join("") + "</tr>"; }).join("") + "</table></div>";
+    $("s2").innerHTML = "<div>X\u2032 = T + (1 + s) \u00b7 R \u00b7 X</div>" +
+      '<table><tr><td class="l">T</td><td>' + [S.p.tx, S.p.ty, S.p.tz].map(function (v) { return fx(v, 3); }).join(", ") + " m</td></tr>" +
+      '<tr><td class="l">1 + s</td><td>' + (1 + S.p.s * 1e-6).toFixed(10) + "</td></tr></table>R (" + (S.conv === "pv" ? "position vector" : "coordinate frame") + ")<br>" + mat +
+      '<table><tr><td class="l">X\u2032</td><td>' + fx(H.Xp[0], 3) + " m</td></tr><tr><td class=\"l\">Y\u2032</td><td>" + fx(H.Xp[1], 3) + " m</td></tr><tr><td class=\"l\">Z\u2032</td><td>" + fx(H.Xp[2], 3) + " m</td></tr></table>";
+    $("s3").innerHTML = '<table><tr><td class="l">target</td><td>' + esc(S.dst) + "</td></tr>" +
+      '<tr><td class="l">lat\u2032</td><td>' + fx(g.lat, 8) + "\u00b0</td></tr><tr><td class=\"l\"></td><td>" + dms(g.lat, true) + "</td></tr>" +
+      '<tr><td class="l">lon\u2032</td><td>' + fx(g.lon, 8) + "\u00b0</td></tr><tr><td class=\"l\"></td><td>" + dms(g.lon, false) + "</td></tr>" +
+      '<tr><td class="l">h\u2032</td><td>' + fx(g.h, 3) + " m</td></tr></table>";
+    var tot = [c.dT[0] + c.dS[0] + c.dR[0], c.dT[1] + c.dS[1] + c.dR[1], c.dT[2] + c.dS[2] + c.dR[2]];
+    var hz = Math.hypot(tot[0], tot[1]), brg = (Math.atan2(tot[0], tot[1]) / D2R + 360) % 360;
+    $("s4").innerHTML = '<table><tr><td class="l">east</td><td class="out">' + sg(tot[0], 3) + " m</td></tr><tr><td class=\"l\">north</td><td class=\"out\">" + sg(tot[1], 3) + " m</td></tr><tr><td class=\"l\">up</td><td class=\"out\">" + sg(tot[2], 3) + " m</td></tr>" +
+      '<tr><td class="l">horizontal</td><td class="out">' + hz.toFixed(3) + " m at " + brg.toFixed(1) + "\u00b0</td></tr><tr><td class=\"l\">3D length</td><td class=\"out\">" + Math.hypot(c.dX[0], c.dX[1], c.dX[2]).toFixed(3) + " m</td></tr></table>" +
+      '<p class="note">Measured in the local east-north-up frame at the source point.</p>';
+  }
+  function drawLegend(c) {
+    var rows = [["t", "Translation", c.dT], ["s", "Scale", c.dS], ["r", "Rotation", c.dR]];
+    $("legend").innerHTML = S.view === "local" ? rows.map(function (r) {
+      return '<div class="lg"><i style="background:' + COL[r[0]] + '"></i><span>' + r[1] + "</span><em>E " + sg(r[2][0], 2) + "  N " + sg(r[2][1], 2) + "  U " + sg(r[2][2], 2) + " m</em></div>";
+    }).join("") : "";
+    $("plotNote").textContent = S.view === "local"
+      ? "Each arrow is one part of the shift, laid end to end from the original point P. The dashed line is the total, ending at P\u2032. Up is shown on the gauge at the right."
+      : "Each arrow shows how far the horizontal position moves at that grid point. Rotations and scale make the shift change across the region.";
+  }
+
+  /* ---------- canvas ---------- */
+  var cv = $("cv"), ctx = cv.getContext("2d"), W = 640, Hh = 440, dpr = 1;
+  function sizeCanvas() {
+    dpr = window.devicePixelRatio || 1;
+    W = Math.max(320, cv.parentElement.clientWidth - 4);
+    Hh = Math.round(Math.min(460, Math.max(300, W * 0.68)));
+    cv.width = Math.round(W * dpr); cv.height = Math.round(Hh * dpr); cv.style.height = Hh + "px";
+  }
+  function arrow(x0, y0, x1, y1, col, w, head) {
+    var dx = x1 - x0, dy = y1 - y0, L = Math.hypot(dx, dy);
+    ctx.strokeStyle = col; ctx.fillStyle = col; ctx.lineWidth = w;
+    ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); ctx.stroke();
+    if (L < 2) return;
+    var a = Math.atan2(dy, dx), hs = head || 9;
+    ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x1 - hs * Math.cos(a - .4), y1 - hs * Math.sin(a - .4)); ctx.lineTo(x1 - hs * Math.cos(a + .4), y1 - hs * Math.sin(a + .4)); ctx.closePath(); ctx.fill();
+  }
+  function label(t, x, y, col, al, size) { ctx.fillStyle = col || "#2a2c1a"; ctx.font = (size || 12) + "px 'Share Tech Mono', ui-monospace, monospace"; ctx.textAlign = al || "left"; ctx.textBaseline = "middle"; ctx.fillText(t, x, y); }
+  function crosshair(x, y, r, col) {
+    ctx.strokeStyle = col; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(x, y, r, 0, 6.29); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(x - r - 5, y); ctx.lineTo(x + r + 5, y); ctx.moveTo(x, y - r - 5); ctx.lineTo(x, y + r + 5); ctx.stroke();
+  }
+
+  function drawLocal(c) {
+    var gw = 84, pw = W - gw, cx = pw / 2, cy = Hh / 2, R = Math.min(pw, Hh) / 2 - 26;
+    var v = [c.dT, c.dS, c.dR], pts = [[0, 0, 0]];
+    v.forEach(function (d, i) { var p = pts[i]; pts.push([p[0] + d[0], p[1] + d[1], p[2] + d[2]]); });
+    var mx = 0.5; pts.forEach(function (p) { mx = Math.max(mx, Math.abs(p[0]), Math.abs(p[1])); });
+    var step = nice(mx / 3), n = Math.max(2, Math.ceil(mx / step - 1e-9)), ringMax = n * step, sc = R / ringMax;
+    ctx.strokeStyle = "rgba(90,82,44,.30)"; ctx.lineWidth = 1;
+    for (var g = -n; g <= n; g++) {
+      ctx.beginPath(); ctx.moveTo(cx + g * step * sc, cy - R); ctx.lineTo(cx + g * step * sc, cy + R); ctx.moveTo(cx - R, cy + g * step * sc); ctx.lineTo(cx + R, cy + g * step * sc); ctx.stroke();
+    }
+    ctx.strokeStyle = "rgba(90,82,44,.55)";
+    for (var k = 1; k <= n; k++) {
+      ctx.beginPath(); ctx.arc(cx, cy, k * step * sc, 0, 6.29); ctx.stroke();
+      label(k * step + " m", cx + k * step * sc * 0.7071 + 3, cy - k * step * sc * 0.7071 - 2, "#6a643f", "left", 11);
+    }
+    ctx.strokeStyle = "#2a2c1a"; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(cx - R, cy); ctx.lineTo(cx + R, cy); ctx.moveTo(cx, cy - R); ctx.lineTo(cx, cy + R); ctx.stroke();
+    label("N", cx, cy - R - 12, "#2a2c1a", "center", 13); label("E", cx + R + 12, cy, "#2a2c1a", "center", 13);
+    var X = function (e) { return cx + e * sc; }, Y = function (nn) { return cy - nn * sc; };
+    // resultant
+    if (S.prog >= 3) {
+      ctx.setLineDash([6, 4]); ctx.strokeStyle = "#2a2c1a"; ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.moveTo(X(0), Y(0)); ctx.lineTo(X(pts[3][0]), Y(pts[3][1])); ctx.stroke(); ctx.setLineDash([]);
+    }
+    var cols = [COL.t, COL.s, COL.r], head = [0, 0];
+    for (var i = 0; i < 3; i++) {
+      var fr = Math.max(0, Math.min(1, S.prog - i)); if (fr <= 0) break;
+      var a = pts[i], b = pts[i + 1], ex = a[0] + (b[0] - a[0]) * fr, en = a[1] + (b[1] - a[1]) * fr;
+      arrow(X(a[0]), Y(a[1]), X(ex), Y(en), cols[i], 3.5, 10); head = [ex, en];
+    }
+    crosshair(X(0), Y(0), 6, "#2a2c1a"); label("P", X(0) + 12, Y(0) + 14, "#2a2c1a", "left", 13);
+    if (S.prog >= 3) { crosshair(X(pts[3][0]), Y(pts[3][1]), 7, "#9a4628"); label("P\u2032", X(pts[3][0]) + 13, Y(pts[3][1]) - 13, "#9a4628", "left", 13); }
+    else if (S.prog > 0) { ctx.fillStyle = "#2a2c1a"; ctx.beginPath(); ctx.arc(X(head[0]), Y(head[1]), 3.5, 0, 6.29); ctx.fill(); }
+
+    // up gauge
+    var gx = pw + 34, uMax = 0.5; pts.forEach(function (p) { uMax = Math.max(uMax, Math.abs(p[2])); });
+    var us = nice(uMax / 2), un = Math.max(1, Math.ceil(uMax / us - 1e-9)), uR = Hh / 2 - 26, usc = uR / (un * us);
+    ctx.strokeStyle = "#2a2c1a"; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(gx, cy - uR); ctx.lineTo(gx, cy + uR); ctx.stroke();
+    for (var t = -un; t <= un; t++) {
+      var ty = cy - t * us * usc; ctx.beginPath(); ctx.moveTo(gx - 5, ty); ctx.lineTo(gx + 5, ty); ctx.stroke();
+      if (t !== 0) label(String(t * us), gx - 8, ty, "#6a643f", "right", 10);
+    }
+    label("Up (m)", gx, cy - uR - 12, "#2a2c1a", "center", 12);
+    for (var j = 0; j < 3; j++) {
+      var f2 = Math.max(0, Math.min(1, S.prog - j)); if (f2 <= 0) break;
+      var u0 = pts[j][2], u1 = u0 + (pts[j + 1][2] - u0) * f2, bxx = gx + 6 + j * 8;
+      ctx.fillStyle = cols[j]; var y0 = cy - u0 * usc, y1 = cy - u1 * usc;
+      ctx.fillRect(bxx, Math.min(y0, y1), 6, Math.max(1.5, Math.abs(y1 - y0)));
+    }
+  }
+
+  function drawField() {
+    var N = 3, pad = 30, cell = Math.min((W - pad * 2) / (2 * N), (Hh - pad * 2) / (2 * N)), cx = W / 2, cy = Hh / 2;
+    var latStep = S.span / (2 * N), lonStep = latStep / Math.max(0.2, Math.cos(S.lat * D2R));
+    var arr = [], mx = 0, i, j;
+    for (j = -N; j <= N; j++) for (i = -N; i <= N; i++) {
+      var la = Math.max(-89, Math.min(89, S.lat + j * latStep)), lo = S.lon + i * lonStep, cc = calc(la, lo, S.h);
+      var e = cc.dT[0] + cc.dS[0] + cc.dR[0], nn = cc.dT[1] + cc.dS[1] + cc.dR[1], m = Math.hypot(e, nn);
+      arr.push({ i: i, j: j, e: e, n: nn, m: m }); mx = Math.max(mx, m);
+    }
+    var sc = mx > 0 ? (cell * 0.85) / mx : 0, grow = Math.min(1, S.prog / 3);
+    ctx.strokeStyle = "rgba(90,82,44,.30)"; ctx.lineWidth = 1;
+    for (i = -N; i <= N; i++) { ctx.beginPath(); ctx.moveTo(cx + i * cell, cy - N * cell); ctx.lineTo(cx + i * cell, cy + N * cell); ctx.moveTo(cx - N * cell, cy + i * cell); ctx.lineTo(cx + N * cell, cy + i * cell); ctx.stroke(); }
+    arr.forEach(function (a) {
+      var x = cx + a.i * cell, y = cy - a.j * cell, t = mx > 0 ? a.m / mx : 0;
+      ctx.fillStyle = "#2a2c1a"; ctx.fillRect(x - 2, y - 2, 4, 4);
+      var col = "rgb(" + Math.round(77 + t * 77) + "," + Math.round(90 - t * 20) + "," + Math.round(42 - t * 2) + ")";
+      arrow(x, y, x + a.e * sc * grow, y - a.n * sc * grow, col, 2.5, 8);
+    });
+    crosshair(cx, cy, 8, "#9a4628");
+    label("N", cx, pad - 14, "#2a2c1a", "center", 13);
+    label("grid step " + (latStep * 111.2).toFixed(0) + " km", pad, Hh - 12, "#6a643f", "left", 11);
+    label("longest arrow " + mx.toFixed(1) + " m", W - pad, Hh - 12, "#6a643f", "right", 11);
+    $("spanV").textContent = S.span + "\u00b0 north-south";
+  }
+
+  /* ---------- update loop ---------- */
+  var cur = null;
+  function update(replay) {
+    cur = calc(S.lat, S.lon, S.h);
+    $("tLocal").className = S.view === "local" ? "" : "off"; $("tField").className = S.view === "field" ? "" : "off";
+    $("fieldCtl").hidden = S.view !== "field";
+    if (replay) { S.prog = 0; S.playing = true; } else if (!S.playing) S.prog = 3;
+    drawText(cur); drawLegend(cur); render();
+  }
+  function render() {
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, W, Hh);
+    if (S.view === "local") drawLocal(cur); else drawField();
+  }
+  var last = 0;
+  function loop(now) {
+    var dt = Math.min(0.1, (now - last) / 1000); last = now;
+    if (S.playing) { S.prog += dt / 1.1; if (S.prog >= 3) { S.prog = 3; S.playing = false; } render(); }
+    requestAnimationFrame(loop);
+  }
+  var rz; window.addEventListener("resize", function () { clearTimeout(rz); rz = setTimeout(function () { sizeCanvas(); render(); }, 80); });
+
+  S.p = JSON.parse(JSON.stringify(PRESETS[0].p)); S.conv = PRESETS[0].conv;
+  buildControls(); syncInputs(); sizeCanvas(); update(true);
+  requestAnimationFrame(function (n) { last = n; loop(n); });
+})();
+</script>
+</body>
+</html>
